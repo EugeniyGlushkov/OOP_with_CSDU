@@ -6,11 +6,17 @@ import processing.core.*;
 
 public class MyPApplet extends PApplet {	
 	private String URL = "https://filmets.net/uploads/posts/2019-02/1549058690-791538044-kapitan-marvel.jpg";
+	//private String URL = "http://cseweb.ucsd.edu/~minnes/palmTrees.jpg";
 	private PImage backgroundImage;
 	
 	@Override
-	public void setup() {
+	public void settings() {
 		size(200, 200);
+		
+	}
+	
+	@Override
+	public void setup() {
 		backgroundImage = loadImage(URL, "jpg");
 	}
 	
@@ -25,7 +31,13 @@ public class MyPApplet extends PApplet {
 		int r = (int)(4.25 * secs);
 		int g = (int)(3.483 * secs);
 		int b = 0;
-		fill(r, g, 0);
-		ellipse(50, 40, 40, 40);
+		fill(r, g, b);
+		//ellipse(50, 40, 40, 40);
+		circle(50, 40, 40);
+	}
+	
+	public static void main(String[] args) {
+		PApplet.main(MyPApplet.class.getName());
+		
 	}
 }
