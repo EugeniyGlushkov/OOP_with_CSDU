@@ -24,6 +24,6 @@
 	<classpathentry kind="lib" path="lib/json4processing.jar"/>
 	<classpathentry kind="lib" path="lib/libTUIO.jar"/>
 	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.7.2.jar"/>
-	<classpathentry kind="lib" path="lib/Unfolding.jar"/>
+	<classpathentry kind="lib" path="lib/Unfolding.jar" sourcepath="lib/Unfolding.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
