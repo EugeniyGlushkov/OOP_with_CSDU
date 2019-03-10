@@ -1,14 +1,46 @@
 package main.java.ru.alvisid.citymaps.earthquake;
 
 import processing.core.PApplet;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 import de.fhpotsdam.unfolding.UnfoldingMap;
+import de.fhpotsdam.unfolding.data.PointFeature;
 import de.fhpotsdam.unfolding.geo.Location;
 import de.fhpotsdam.unfolding.providers.Google;
+import de.fhpotsdam.unfolding.providers.MBTilesMapProvider;
 import de.fhpotsdam.unfolding.providers.Microsoft;
 import de.fhpotsdam.unfolding.utils.MapUtils;
+import parsing.ParseFeed;
+import de.fhpotsdam.unfolding.marker.Marker;
 import de.fhpotsdam.unfolding.marker.SimplePointMarker;
 
 public class EarthquakeCityMap extends PApplet {
+	// You can ignore this. It's to keep eclipse from generating a warning.
+	private static final long serialVersionUID = 1L;
+
+	// IF YOU ARE WORKING OFFLINE, change the value of this variable to true
+	private static final boolean offline = false;
+
+	// Less than this threshold is a light earthquake
+	public static final float THRESHOLD_MODERATE = 5;
+	// Less than this threshold is a minor earthquake
+	public static final float THRESHOLD_LIGHT = 4;
+
+	/**
+	 * This is where to find the local tiles, for working without an Internet
+	 * connection
+	 */
+	public static String mbTilesString = "src/data/blankLight-1-3.mbtiles";
+
+	private final int RED = color(255, 0, 0);
+	private final int YELLOW = color(255, 255, 0);
+	private final int BLUE = color(0, 0, 255);
+
+	// feed with magnitude 2.5+ Earthquakes
+	private String earthquakesURL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.atom";
+
 	private UnfoldingMap map;
 
 	public void settings() {
@@ -16,21 +48,46 @@ public class EarthquakeCityMap extends PApplet {
 	}
 
 	public void setup() {
-		map = new UnfoldingMap(this, 200, 50, 700, 500, new Google.GoogleMapProvider());
-		// map = new UnfoldingMap(this, 200, 50, 700, 500, new
-		// Microsoft.HybridProvider());
+		if (offline) {
+			map = new UnfoldingMap(this, 200, 50, 700, 500, new MBTilesMapProvider(mbTilesString));
+			earthquakesURL = "2.5_week.atom"; // Same feed, saved Aug 7, 2015, for working offline
+		} else {
+			map = new UnfoldingMap(this, 200, 50, 700, 500, new Google.GoogleMapProvider());
+			// IF YOU WANT TO TEST WITH A LOCAL FILE, uncomment the next line
+			// earthquakesURL = "2.5_week.atom";
+			// map = new UnfoldingMap(this, 200, 50, 700, 500, new
+			// Microsoft.HybridProvider());
+		}
 		map.zoomToLevel(2);
 		MapUtils.createDefaultEventDispatcher(this, map);
-		Location valLoc = new Location(-38.14f, -73.03f);
-		// SimplePointMarker val = new SimplePointMarker(valLoc);
-		SimplePointMarker val = new MarkerMiddleMagnitude(valLoc);
-		map.addMarker(val);
+		
+	    //Use provided parser to collect properties for each earthquake
+	    //PointFeatures have a getLocation method
+	    List<PointFeature> earthquakes = ParseFeed.parseEarthquake(this, earthquakesURL);
+	    
+	    List<Marker> markers = earthquakes.stream().map(earthQuake -> createMarker(earthQuake)).collect(Collectors.toList());
+		map.addMarkers(markers);
 	}
 
 	public void draw() {
-		background(220);
+		background(100);
 		map.draw();
 		addKey();
+	}
+	
+	private SimplePointMarker createMarker(PointFeature feature) {
+		// To print all of the features in a PointFeature (so you can see what they are)
+		// uncomment the line below. Note this will only print if you call createMarker
+		// from setup
+		// System.out.println(feature.getProperties());
+		Location location = feature.getLocation();
+
+		Object magObj = feature.getProperty("magnitude");
+		float mag = Float.parseFloat(magObj.toString());
+
+		// Finally return the marker
+		return mag >= THRESHOLD_MODERATE ? new MarkerStrongMagnitude(location) :
+			(mag >= THRESHOLD_LIGHT ? new MarkerMiddleMagnitude(location) : new MarkerLowMagnitude(location));
 	}
 
 	public static void main(String[] args) {
@@ -65,7 +122,7 @@ public class EarthquakeCityMap extends PApplet {
 	public class MarkerStrongMagnitude extends SimplePointMarker {
 		public MarkerStrongMagnitude(Location location) {
 			super(location);
-			setColor(color(255, 0, 0));
+			setColor(RED);
 			setDiameter(18);
 		}
 	}
@@ -81,7 +138,7 @@ public class EarthquakeCityMap extends PApplet {
 	public class MarkerMiddleMagnitude extends SimplePointMarker {
 		public MarkerMiddleMagnitude(Location location) {
 			super(location);
-			setColor(color(255, 255, 0));
+			setColor(YELLOW);
 			setDiameter(10);
 		}
 	}
@@ -97,7 +154,7 @@ public class EarthquakeCityMap extends PApplet {
 	public class MarkerLowMagnitude extends SimplePointMarker {
 		public MarkerLowMagnitude(Location location) {
 			super(location);
-			setColor(color(0, 0, 255));
+			setColor(BLUE);
 			setDiameter(6);
 		}
 	}
